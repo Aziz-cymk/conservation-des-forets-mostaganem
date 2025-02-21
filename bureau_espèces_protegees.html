@@ -98,10 +98,13 @@
     </div>
 
     <script>
+        const fileStorageKey = 'protectedSpeciesFiles'; // Clé pour localStorage
+
+        // Fonction pour gérer la sélection des fichiers
         function handleFileSelect(event) {
             const files = event.target.files;
             const fileContainer = document.getElementById('file8-container');
-            fileContainer.innerHTML = ""; // Clear previous files
+            fileContainer.innerHTML = ""; // Réinitialiser la zone d'affichage
 
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
@@ -115,14 +118,14 @@
                 const fileURL = URL.createObjectURL(file);
                 let fileLink;
 
-                // Check if the file is an image
+                // Vérifier si le fichier est une image
                 if (file.type.startsWith('image/')) {
                     const img = document.createElement('img');
                     img.src = fileURL;
-                    img.style.maxWidth = '100px'; // Set max width for images
+                    img.style.maxWidth = '100px'; // Limiter la taille des images
                     fileItem.appendChild(img);
                 } 
-                // Check if the file is a PDF
+                // Vérifier si le fichier est un PDF
                 else if (file.type === 'application/pdf') {
                     fileLink = document.createElement('a');
                     fileLink.href = fileURL;
@@ -131,29 +134,85 @@
                     fileItem.appendChild(fileLink);
                 }
 
-                // Add a delete button
+                // Ajouter un bouton de suppression
                 const deleteButton = document.createElement('button');
                 deleteButton.textContent = 'Supprimer';
                 deleteButton.onclick = function() {
-                    fileItem.remove(); // Remove the file item
+                    fileItem.remove();
+                    removeFromLocalStorage(file.name); // Supprimer du localStorage
                 };
                 fileItem.appendChild(deleteButton);
 
-                // Add file item to the container
+                // Ajouter l'élément de fichier au conteneur
                 fileContainer.appendChild(fileItem);
+
+                // Sauvegarder le fichier dans le localStorage
+                saveToLocalStorage(fileURL, file.name);
             }
         }
 
+        // Fonction pour sauvegarder les fichiers dans le localStorage
+        function saveToLocalStorage(fileURL, fileName) {
+            let savedFiles = JSON.parse(localStorage.getItem(fileStorageKey)) || [];
+            savedFiles.push({ fileURL, fileName });
+            localStorage.setItem(fileStorageKey, JSON.stringify(savedFiles));
+        }
+
+        // Fonction pour supprimer un fichier du localStorage
+        function removeFromLocalStorage(fileName) {
+            let savedFiles = JSON.parse(localStorage.getItem(fileStorageKey)) || [];
+            savedFiles = savedFiles.filter(file => file.fileName !== fileName);
+            localStorage.setItem(fileStorageKey, JSON.stringify(savedFiles));
+        }
+
+        // Fonction pour charger les fichiers sauvegardés du localStorage
+        function loadSavedFiles() {
+            const savedFiles = JSON.parse(localStorage.getItem(fileStorageKey)) || [];
+            const fileContainer = document.getElementById('file8-container');
+            fileContainer.innerHTML = ""; // Réinitialiser la zone d'affichage
+
+            savedFiles.forEach(file => {
+                const fileItem = document.createElement('div');
+                fileItem.classList.add('file-item');
+                
+                const fileName = document.createElement('span');
+                fileName.textContent = file.fileName;
+                fileItem.appendChild(fileName);
+
+                const fileLink = document.createElement('a');
+                fileLink.href = file.fileURL;
+                fileLink.target = '_blank';
+                fileLink.textContent = "Cliquez ici pour ouvrir le fichier";
+                fileItem.appendChild(fileLink);
+
+                // Ajouter un bouton de suppression
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Supprimer';
+                deleteButton.onclick = function() {
+                    fileItem.remove();
+                    removeFromLocalStorage(file.fileName); // Supprimer du localStorage
+                };
+                fileItem.appendChild(deleteButton);
+
+                fileContainer.appendChild(fileItem);
+            });
+        }
+
+        // Fonction de sauvegarde (ici un message simulé)
         function saveFiles() {
             const fileContainer = document.getElementById('file8-container');
             const fileItems = fileContainer.getElementsByClassName('file-item');
 
-            // Here you would save your files (this is just a mock-up)
             if (fileItems.length === 0) {
                 alert("Aucun fichier à enregistrer.");
             } else {
                 alert(fileItems.length + " fichier(s) enregistré(s).");
             }
+        }
+
+        // Charger les fichiers sauvegardés lors du chargement de la page
+        window.onload = function() {
+            loadSavedFiles();
         }
     </script>
 

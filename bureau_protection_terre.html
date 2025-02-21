@@ -33,7 +33,7 @@
         .office h3 {
             color: #34495e;
         }
-        input[type="file"] {
+        .office input[type="file"] {
             width: 100%;
             padding: 10px;
             font-size: 16px;
@@ -86,10 +86,17 @@
 <body>
 
     <div class="container">
-        <h2>مكتب حماية و استصلاح الأراضي الأراضي</h2>
+        <h2>Bureau de Protection de la Terre</h2>
 
-        <div class="office">
-            <h3>Documents du Bureau de Protection de la Terre</h3>
+        <!-- Ajout de plusieurs bureaux -->
+        <div class="office" id="office1">
+            <h3>Bureau 1 : Protection de la Terre</h3>
+            <input type="file" id="file1" multiple onchange="handleFileSelect(event, 'file1')">
+            <div class="file-container" id="file1-container"></div>
+        </div>
+
+        <div class="office" id="office2">
+            <h3>Bureau 2 : Reforestation</h3>
             <input type="file" id="file2" multiple onchange="handleFileSelect(event, 'file2')">
             <div class="file-container" id="file2-container"></div>
         </div>
@@ -98,6 +105,7 @@
     </div>
 
     <script>
+        // Fonction pour gérer la sélection des fichiers
         function handleFileSelect(event, fileId) {
             const files = event.target.files;
             const fileContainer = document.getElementById(fileId + '-container');
@@ -119,17 +127,84 @@
                 deleteBtn.classList.add('delete-btn');
                 deleteBtn.textContent = 'Supprimer';
                 deleteBtn.onclick = function() {
-                    fileItem.remove();
+                    if (confirm("Êtes-vous sûr de vouloir supprimer ce fichier ?")) {
+                        fileItem.remove();
+                        removeFromLocalStorage(fileName); // Supprimer du localStorage
+                    }
                 };
 
                 fileItem.appendChild(fileLink);
                 fileItem.appendChild(deleteBtn);
                 fileContainer.appendChild(fileItem);
+
+                // Sauvegarder le fichier dans le localStorage
+                saveToLocalStorage(fileURL, fileName);
             }
         }
 
+        // Fonction pour sauvegarder les fichiers dans le localStorage
+        function saveToLocalStorage(fileURL, fileName) {
+            let savedFiles = JSON.parse(localStorage.getItem('savedFiles')) || [];
+            savedFiles.push({ fileURL, fileName });
+            localStorage.setItem('savedFiles', JSON.stringify(savedFiles));
+            loadSavedFiles(); // Recharger les fichiers sauvegardés
+        }
+
+        // Fonction pour supprimer un fichier du localStorage
+        function removeFromLocalStorage(fileName) {
+            let savedFiles = JSON.parse(localStorage.getItem('savedFiles')) || [];
+            savedFiles = savedFiles.filter(file => file.fileName !== fileName);
+            localStorage.setItem('savedFiles', JSON.stringify(savedFiles));
+            loadSavedFiles(); // Recharger les fichiers après suppression
+        }
+
+        // Fonction pour charger les fichiers sauvegardés
+        function loadSavedFiles() {
+            const savedFiles = JSON.parse(localStorage.getItem('savedFiles')) || [];
+            const fileContainer1 = document.getElementById('file1-container');
+            const fileContainer2 = document.getElementById('file2-container');
+
+            // Réinitialiser les zones d'affichage
+            fileContainer1.innerHTML = "";
+            fileContainer2.innerHTML = "";
+
+            savedFiles.forEach(file => {
+                const fileItem = document.createElement('div');
+                fileItem.classList.add('file-item');
+                const fileLink = document.createElement('a');
+                fileLink.href = file.fileURL;
+                fileLink.target = '_blank';
+                fileLink.textContent = file.fileName;
+
+                // Ajouter un bouton de suppression pour les fichiers sauvegardés
+                const deleteBtn = document.createElement('button');
+                deleteBtn.classList.add('delete-btn');
+                deleteBtn.textContent = 'Supprimer';
+                deleteBtn.onclick = function() {
+                    fileItem.remove();
+                    removeFromLocalStorage(file.fileName); // Supprimer du localStorage
+                };
+
+                fileItem.appendChild(fileLink);
+                fileItem.appendChild(deleteBtn);
+
+                // Ajouter les fichiers sauvegardés dans les conteneurs correspondants
+                if (file.fileName.includes("Bureau 1")) {
+                    fileContainer1.appendChild(fileItem);
+                } else {
+                    fileContainer2.appendChild(fileItem);
+                }
+            });
+        }
+
+        // Fonction de sauvegarde (en fait une alerte pour indiquer que les fichiers ont été enregistrés)
         function saveFiles() {
             alert('Fichiers enregistrés avec succès !');
+        }
+
+        // Charger les fichiers lors de l'ouverture de la page
+        window.onload = function() {
+            loadSavedFiles();
         }
     </script>
 

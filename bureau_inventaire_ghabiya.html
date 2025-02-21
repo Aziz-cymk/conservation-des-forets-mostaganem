@@ -60,6 +60,17 @@
         button:hover {
             background-color: #1e6a8b;
         }
+        .delete-btn {
+            background-color: red;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .delete-btn:hover {
+            background-color: darkred;
+        }
     </style>
 </head>
 <body>
@@ -73,37 +84,111 @@
             <div class="file-container" id="file4-container"></div>
         </div>
 
-        <button>Enregistrer les Fichiers</button>
+        <button onclick="saveFiles()">Enregistrer les Fichiers</button>
     </div>
 
     <script>
+        // Fonction pour gérer la sélection des fichiers
         function handleFileSelect(event, fileId) {
-            const file = event.target.files[0];
+            const files = event.target.files;
             const fileContainer = document.getElementById(fileId + '-container');
-            fileContainer.innerHTML = "";
-            
-            if (file) {
+            fileContainer.innerHTML = ""; // Réinitialiser la zone d'affichage
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
                 const fileURL = URL.createObjectURL(file);
                 const fileName = file.name;
                 let fileLink;
-                
+
+                // Affichage pour les fichiers image
                 if (file.type.startsWith('image/')) {
                     const img = document.createElement('img');
                     img.src = fileURL;
+                    img.style.width = "100px";  // Redimensionner l'image pour la prévisualisation
                     fileContainer.appendChild(img);
-                } else if (file.type === 'application/pdf') {
+                } 
+                // Affichage pour les fichiers PDF
+                else if (file.type === 'application/pdf') {
                     fileLink = document.createElement('a');
                     fileLink.href = fileURL;
                     fileLink.target = '_blank';
                     fileLink.textContent = "Cliquez ici pour ouvrir le PDF";
-                }
-                
-                if (fileLink) {
                     fileContainer.appendChild(fileLink);
                 }
+
+                // Ajouter le bouton de suppression pour chaque fichier
+                const deleteBtn = document.createElement('button');
+                deleteBtn.classList.add('delete-btn');
+                deleteBtn.textContent = 'Supprimer';
+                deleteBtn.onclick = function() {
+                    fileContainer.removeChild(img);
+                    fileContainer.removeChild(fileLink);
+                    deleteBtn.remove();
+                    removeFromLocalStorage(fileName, fileId); // Supprimer du localStorage
+                };
+
+                // Ajouter le bouton de suppression à chaque fichier
+                fileContainer.appendChild(deleteBtn);
+
+                // Sauvegarder les fichiers dans le localStorage
+                saveToLocalStorage(fileURL, fileName, fileId);
             }
+        }
+
+        // Fonction pour sauvegarder les fichiers dans le localStorage
+        function saveToLocalStorage(fileURL, fileName, fileId) {
+            let savedFiles = JSON.parse(localStorage.getItem(fileId)) || [];
+            savedFiles.push({ fileURL, fileName });
+            localStorage.setItem(fileId, JSON.stringify(savedFiles));
+            loadSavedFiles(fileId); // Recharger les fichiers sauvegardés
+        }
+
+        // Fonction pour supprimer un fichier du localStorage
+        function removeFromLocalStorage(fileName, fileId) {
+            let savedFiles = JSON.parse(localStorage.getItem(fileId)) || [];
+            savedFiles = savedFiles.filter(file => file.fileName !== fileName);
+            localStorage.setItem(fileId, JSON.stringify(savedFiles));
+            loadSavedFiles(fileId); // Recharger les fichiers après suppression
+        }
+
+        // Fonction pour charger les fichiers sauvegardés
+        function loadSavedFiles(fileId) {
+            const savedFiles = JSON.parse(localStorage.getItem(fileId)) || [];
+            const fileContainer = document.getElementById(fileId + '-container');
+            fileContainer.innerHTML = ""; // Réinitialiser la zone d'affichage
+
+            savedFiles.forEach(file => {
+                const fileItem = document.createElement('div');
+                const fileLink = document.createElement('a');
+                fileLink.href = file.fileURL;
+                fileLink.target = '_blank';
+                fileLink.textContent = file.fileName;
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.classList.add('delete-btn');
+                deleteBtn.textContent = 'Supprimer';
+                deleteBtn.onclick = function() {
+                    fileItem.remove();
+                    removeFromLocalStorage(file.fileName, fileId); // Supprimer du localStorage
+                };
+
+                fileItem.appendChild(fileLink);
+                fileItem.appendChild(deleteBtn);
+                fileContainer.appendChild(fileItem);
+            });
+        }
+
+        // Fonction de sauvegarde (en fait une alerte pour indiquer que les fichiers ont été enregistrés)
+        function saveFiles() {
+            alert('Fichiers enregistrés avec succès !');
+        }
+
+        // Charger les fichiers lors de l'ouverture de la page
+        window.onload = function() {
+            loadSavedFiles('file4'); // Charger les fichiers du Bureau d'Inventaire de Ghabiya
         }
     </script>
 
 </body>
 </html>
+

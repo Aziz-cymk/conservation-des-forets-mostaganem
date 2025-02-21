@@ -124,6 +124,33 @@
         .delete-btn:hover {
             background-color: #c0392b;
         }
+
+        .saved-files-container {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #ecf0f1;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .saved-files-container h4 {
+            font-size: 22px;
+            color: #34495e;
+            margin-bottom: 20px;
+        }
+
+        .saved-files-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .saved-files-list li {
+            padding: 10px;
+            background-color: #fff;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
     </style>
 </head>
 <body>
@@ -139,10 +166,15 @@
                 <input type="file" id="file1" multiple onchange="handleFileSelect(event, 'file1')">
                 <div class="file-container" id="file1-container"></div>
             </div>
-            ْ
         </div>
 
         <button onclick="saveFiles()">حفظ الملفات</button>
+    </div>
+
+    <!-- Section pour afficher les fichiers sauvegardés -->
+    <div class="saved-files-container">
+        <h4>الملفات المحفوظة:</h4>
+        <ul class="saved-files-list" id="saved-files-list"></ul>
     </div>
 
     <script>
@@ -156,16 +188,23 @@
                 for (const file of files) {
                     const fileURL = URL.createObjectURL(file);
                     const fileName = file.name;
+
+                    // Création du lien pour télécharger ou ouvrir le fichier
                     const fileLink = document.createElement('a');
                     fileLink.href = fileURL;
-                    fileLink.target = '_blank';
-                    fileLink.textContent = `انقر هنا لفتح ${fileName}`;
+                    fileLink.download = fileName;
+                    fileLink.textContent = `انقر هنا لتحميل ${fileName}`;
 
+                    // Création du bouton de suppression
                     const deleteBtn = document.createElement('button');
                     deleteBtn.classList.add('delete-btn');
                     deleteBtn.textContent = 'حذف';
                     deleteBtn.onclick = () => deleteFile(fileLink, deleteBtn);
 
+                    // Sauvegarder le fichier dans le localStorage
+                    saveToLocalStorage(fileURL, fileName);
+
+                    // Ajout du fichier et du bouton à l'interface
                     const fileDiv = document.createElement('div');
                     fileDiv.appendChild(fileLink);
                     fileDiv.appendChild(deleteBtn);
@@ -179,11 +218,59 @@
         function deleteFile(fileLink, deleteBtn) {
             const fileContainer = fileLink.parentElement;
             fileContainer.remove();
+            // Supprimer également du localStorage
+            removeFromLocalStorage(fileLink.download);
         }
 
-        // Fonction de sauvegarde (placeholder pour une fonctionnalité réelle)
+        // Fonction pour sauvegarder les fichiers dans le localStorage
+        function saveToLocalStorage(fileURL, fileName) {
+            let savedFiles = JSON.parse(localStorage.getItem('savedFiles')) || [];
+            savedFiles.push({ fileURL, fileName });
+            localStorage.setItem('savedFiles', JSON.stringify(savedFiles));
+            loadSavedFiles(); // Recharger les fichiers après sauvegarde
+        }
+
+        // Fonction pour supprimer un fichier du localStorage
+        function removeFromLocalStorage(fileName) {
+            let savedFiles = JSON.parse(localStorage.getItem('savedFiles')) || [];
+            savedFiles = savedFiles.filter(file => file.fileName !== fileName);
+            localStorage.setItem('savedFiles', JSON.stringify(savedFiles));
+            loadSavedFiles(); // Recharger les fichiers après suppression
+        }
+
+        // Fonction pour charger les fichiers sauvegardés depuis le localStorage
+        function loadSavedFiles() {
+            const savedFiles = JSON.parse(localStorage.getItem('savedFiles')) || [];
+            const savedFilesList = document.getElementById('saved-files-list');
+            savedFilesList.innerHTML = ""; // Réinitialiser la liste
+
+            savedFiles.forEach(file => {
+                const fileItem = document.createElement('li');
+                const fileLink = document.createElement('a');
+                fileLink.href = file.fileURL;
+                fileLink.textContent = `انقر هنا لتحميل ${file.fileName}`;
+                fileLink.download = file.fileName;
+                fileItem.appendChild(fileLink);
+
+                // Ajout du bouton de suppression pour les fichiers sauvegardés
+                const deleteBtn = document.createElement('button');
+                deleteBtn.classList.add('delete-btn');
+                deleteBtn.textContent = 'حذف';
+                deleteBtn.onclick = () => removeFromLocalStorage(file.fileName);
+
+                fileItem.appendChild(deleteBtn);
+                savedFilesList.appendChild(fileItem);
+            });
+        }
+
+        // Fonction pour sauvegarder les fichiers quand on clique sur le bouton
         function saveFiles() {
             alert("الملفات تم حفظها بنجاح!");
+        }
+
+        // Charger les fichiers au démarrage de la page
+        window.onload = function() {
+            loadSavedFiles();
         }
     </script>
 
